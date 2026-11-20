@@ -3,279 +3,166 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Model Studio</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRO 3D MODEL MAKER</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#101827;color:white;
- font-family:Arial,sans-serif;
-}
-header{
- padding:20px;text-align:center;
- background:#17243a;border-bottom:1px solid #334155;
-}
-header h1{margin:0;color:#38bdf8}
-header p{color:#cbd5e1}
-.container{padding:20px;max-width:1200px;margin:auto}
-.toolbar{
- display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;
-}
-button,select,input{
- padding:11px;border:1px solid #475569;
- border-radius:8px;background:#1e293b;color:white;
- cursor:pointer;
-}
-button:hover{background:#0284c7}
-.main{
- display:grid;grid-template-columns:230px 1fr;gap:15px;
-}
-.sidebar,.viewer{
- background:#1e293b;border-radius:14px;padding:15px;
-}
-.sidebar button{width:100%;margin:5px 0;text-align:left}
-#scene{
- width:100%;height:520px;display:block;
- border-radius:10px;background:#0b1220;
-}
-.viewer h2{margin-top:0}
-.info{color:#94a3b8;font-size:13px}
-@media(max-width:700px){
- .main{grid-template-columns:1fr}
- #scene{height:400px}
+body{margin:0;background:#0b1020;color:white;font-family:Arial}
+header{height:65px;background:#151f35;display:flex;align-items:center;
+justify-content:space-between;padding:0 18px;border-bottom:1px solid #334155}
+header h2{color:#38bdf8;font-size:20px}
+button,select,input{background:#25334d;color:white;border:1px solid #475569;
+padding:9px;border-radius:7px;cursor:pointer}
+button:hover{background:#087da9}
+.app{display:grid;grid-template-columns:190px 1fr 220px;height:calc(100vh - 65px)}
+.panel{background:#151f35;padding:12px;overflow:auto}
+.panel h3{color:#38bdf8;font-size:15px}
+.tool{width:100%;margin:4px 0;text-align:left}
+.viewport{position:relative;min-width:0}
+canvas{width:100%;height:100%;display:block}
+#status{position:absolute;bottom:12px;left:12px;background:#151f35;
+padding:9px;border-radius:7px;font-size:12px}
+label{display:block;font-size:12px;color:#cbd5e1;margin-top:12px}
+input[type=color]{width:100%;height:38px;padding:3px}
+input[type=range]{width:100%}
+select{width:100%;margin-top:5px}
+hr{border-color:#334155}
+@media(max-width:750px){
+.app{grid-template-columns:105px 1fr;height:calc(100vh - 65px)}
+.right{grid-column:1/3;display:grid;grid-template-columns:1fr 1fr}
+.panel{padding:7px}
+.tool{font-size:11px;padding:7px}
+header h2{font-size:15px}
 }
 </style>
 </head>
-
 <body>
 
 <header>
-<h1>🚀 3D MODEL STUDIO</h1>
-<p>Design • Explore • Rotate • Customize</p>
+<h2>🚀 PRO 3D MAKER</h2>
+<div>
+<button onclick="undo()">↶ Undo</button>
+<button onclick="resetScene()">Reset</button>
+</div>
 </header>
 
-<div class="container">
+<div class="app">
 
-<div class="toolbar">
-<button onclick="resetView()">⟳ Reset View</button>
-<button onclick="rotateToggle()">▶ Auto Rotate</button>
-<button onclick="zoomIn()">＋ Zoom</button>
-<button onclick="zoomOut()">－ Zoom</button>
-<select id="color" onchange="changeColor(this.value)">
-<option value="#38bdf8">Blue</option>
-<option value="#ef4444">Red</option>
-<option value="#22c55e">Green</option>
-<option value="#facc15">Yellow</option>
-<option value="#a855f7">Purple</option>
-<option value="#e2e8f0">White</option>
+<aside class="panel">
+<h3>ADD OBJECT</h3>
+<button class="tool" onclick="add('box')">＋ Cube</button>
+<button class="tool" onclick="add('sphere')">＋ Sphere</button>
+<button class="tool" onclick="add('cylinder')">＋ Cylinder</button>
+<button class="tool" onclick="add('cone')">＋ Cone</button>
+<button class="tool" onclick="add('torus')">＋ Ring</button>
+<button class="tool" onclick="add('car')">＋ Car</button>
+<button class="tool" onclick="add('house')">＋ House</button>
+<button class="tool" onclick="add('robot')">＋ Robot</button>
+<button class="tool" onclick="add('tree')">＋ Tree</button>
+<button class="tool" onclick="add('blaster')">＋ Sci-Fi Prop</button>
+
+<hr>
+<h3>TOOLS</h3>
+<button class="tool" onclick="setMode('translate')">↔ Move</button>
+<button class="tool" onclick="setMode('rotate')">⟳ Rotate</button>
+<button class="tool" onclick="setMode('scale')">⤢ Scale</button>
+<button class="tool" onclick="duplicate()">▣ Duplicate</button>
+<button class="tool" onclick="deleteObject()">🗑 Delete</button>
+
+<hr>
+<button class="tool" onclick="toggleGrid()">Grid ON/OFF</button>
+<button class="tool" onclick="toggleWire()">Wireframe</button>
+<button class="tool" onclick="exportGLB()">⬇ Export GLB</button>
+</aside>
+
+<main class="viewport">
+<canvas id="view"></canvas>
+<div id="status">Object Select | Drag to orbit | Scroll to zoom</div>
+</main>
+
+<aside class="panel right">
+<div>
+<h3>OBJECT SETTINGS</h3>
+<label>Select Object</label>
+<select id="objects" onchange="selectById(this.value)">
+<option value="">No Object</option>
 </select>
-</div>
 
-<div class="main">
+<label>Object Color</label>
+<input type="color" id="color" value="#38bdf8" oninput="changeColor(this.value)">
 
-<div class="sidebar">
-<h3>3D Models</h3>
-<div id="models"></div>
-<p class="info">एक मॉडल चुनें और 3D में देखें।</p>
-</div>
+<label>Size</label>
+<input type="range" min=".2" max="4" step=".1" value="1"
+oninput="changeScale(this.value)">
+<label>Position X</label>
+<input type="range" min="-5" max="5" step=".1" value="0"
+oninput="changePosition('x',this.value)">
+<label>Position Y</label>
+<input type="range" min="-5" max="5" step=".1" value="0"
+oninput="changePosition('y',this.value)">
+<label>Position Z</label>
+<input type="range" min="-5" max="5" step=".1" value="0"
+oninput="changePosition('z',this.value)">
 
-<div class="viewer">
-<h2 id="modelName">3D Model Viewer</h2>
-<canvas id="scene"></canvas>
-<p class="info">
-Mouse से Drag करके Rotate करें। Scroll से Zoom करें।
-मोबाइल पर उंगली से Drag करें।
-</p>
-</div>
+<label>Rotation Y</label>
+<input type="range" min="0" max="360" value="0"
+oninput="changeRotation(this.value)">
 
+<hr>
+<h3>CAMERA</h3>
+<button class="tool" onclick="resetCamera()">Reset Camera</button>
+<button class="tool" onclick="saveProject()">💾 Save Project</button>
+<button class="tool" onclick="loadProject()">📂 Load Project</button>
+<input type="file" id="projectFile" accept=".json" hidden
+onchange="readProject(event)">
 </div>
+</aside>
 </div>
 
 <script type="module">
-import * as THREE from
-'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import {TransformControls} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/TransformControls.js';
+import {GLTFExporter} from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/exporters/GLTFExporter.js';
 
-const canvas=document.getElementById('scene');
+const canvas=document.querySelector('#view');
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x0b1220);
+scene.background=new THREE.Color('#0b1020');
 
-const camera=new THREE.PerspectiveCamera(
-45,canvas.clientWidth/canvas.clientHeight,0.1,1000
-);
-camera.position.set(5,4,7);
+const camera=new THREE.PerspectiveCamera(50,1,.1,1000);
+camera.position.set(8,7,10);
 
-const renderer=new THREE.WebGLRenderer({
-canvas,antialias:true
-});
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x334155,2));
-
+scene.add(new THREE.HemisphereLight(0xffffff,0x445566,2));
 const light=new THREE.DirectionalLight(0xffffff,3);
-light.position.set(5,10,7);
+light.position.set(5,10,5);
 scene.add(light);
 
-const grid=new THREE.GridHelper(20,20,0x334155,0x1e293b);
+const grid=new THREE.GridHelper(30,30,0x38bdf8,0x334155);
 scene.add(grid);
 
-const group=new THREE.Group();
-scene.add(group);
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping=true;
 
-let currentColor=0x38bdf8;
-let autoRotate=false;
-let dragging=false,lastX=0,lastY=0;
+const transform=new TransformControls(camera,renderer.domElement);
+scene.add(transform.getHelper());
 
-const material=()=>new THREE.MeshStandardMaterial({
-color:currentColor,metalness:.45,roughness:.35
+transform.addEventListener('dragging-changed',e=>{
+orbit.enabled=!e.value;
+});
+transform.addEventListener('objectChange',()=>{
+if(selected)updateInputs();
 });
 
-function box(x,y,z,w,h,d,mat=material()){
-const obj=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-obj.position.set(x,y,z);
-group.add(obj);return obj;
-}
+const world=new THREE.Group();
+scene.add(world);
 
-function sphere(x,y,z,r,mat=material()){
-const obj=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),mat);
-obj.position.set(x,y,z);
-group.add(obj);return obj;
-}
-
-function cylinder(x,y,z,r1,r2,h,mat=material()){
-const obj=new THREE.Mesh(
-new THREE.CylinderGeometry(r1,r2,h,24),mat);
-obj.position.set(x,y,z);
-group.add(obj);return obj;
-}
-
-function clearModel(){
-while(group.children.length){
-const o=group.children[0];
-group.remove(o);
-o.geometry?.dispose();
-}
-}
-
-function makeModel(type){
-clearModel();
-const dark=new THREE.MeshStandardMaterial({color:0x334155,metalness:.7});
-const glass=new THREE.MeshStandardMaterial({
-color:0x38bdf8,metalness:.3,roughness:.15
-});
-
-if(type==='Gun'){
-// Fictional sci-fi energy blaster game prop
-box(0,0,0,2,.35,.45);
-box(-.1,-.38,0,.45,.8,.4,dark);
-box(.8,.2,0,.5,.18,.3,glass);
-box(-.9,.15,0,.4,.5,.5,dark);
-sphere(.2,.22,0,.16,glass);
-box(0,.4,0,.8,.08,.25,dark);
-}
-
-if(type==='Car'){
-box(0,.45,0,2.5,.65,1.2);
-box(.1,1,0,1.3,.55,1,glass);
-for(let x of [-.8,.8]){
-for(let z of [-.7,.7]){
-const w=cylinder(x,.1,z,.34,.34,.2,dark);
-w.rotation.x=Math.PI/2;
-}
-}
-}
-
-if(type==='House'){
-box(0,.7,0,2,1.4,2);
-const roof=new THREE.Mesh(
-new THREE.ConeGeometry(1.65,1,4),material());
-roof.position.y=1.9;roof.rotation.y=Math.PI/4;
-group.add(roof);
-box(0,.4,1.02,.5,.8,.08,dark);
-}
-
-if(type==='Robot'){
-sphere(0,1.8,0,.48);
-box(0,.8,0,1,1.2,.7);
-for(let x of [-.7,.7]){
-box(x,.8,0,.3,1,.3,dark);
-box(x,-.15,0,.3,.8,.3);
-}
-box(0,2.35,0,.1,.35,.1,dark);
-sphere(0,2.55,0,.12,glass);
-}
-
-if(type==='Tree'){
-cylinder(0,.8,0,.18,.25,1.6,new THREE.MeshStandardMaterial({color:0x854d0e}));
-for(let y of [1.4,2,2.6]){
-const leaves=new THREE.Mesh(
-new THREE.ConeGeometry(1.1,1.5,8),
-new THREE.MeshStandardMaterial({color:0x22c55e}));
-leaves.position.y=y;
-group.add(leaves);
-}
-}
-
-if(type==='Character'){
-sphere(0,2,0,.42);
-box(0,1,0,.7,1,.4);
-box(-.5,.5,0,.2,.9,.2,dark);
-box(.5,.5,0,.2,.9,.2,dark);
-box(-.2,-.1,0,.22,.9,.25);
-box(.2,-.1,0,.22,.9,.25);
-}
-
-if(type==='Shield'){
-const s=new THREE.Mesh(
-new THREE.CylinderGeometry(.95,.95,.2,6),
-material());
-s.position.y=1;
-s.rotation.x=Math.PI/2;
-group.add(s);
-}
-
-if(type==='Ball'){
-sphere(0,1,0,1);
-}
-
-if(type==='Drone'){
-box(0,.4,0,.5,.3,.5);
-for(let x of [-1,1]){
-for(let z of [-1,1]){
-box(x*.7,.4,z*.7,.9,.08,.08,dark);
-const p=cylinder(x*1.1,.5,z*1.1,.25,.25,.06,glass);
-}
-}
-}
-
-if(type==='Tower'){
-box(0,1,0,.8,2,.8);
-for(let y of [.3,1,1.7]){
-box(0,y,.43,.35,.35,.08,glass);
-}
-}
-
-group.position.y=-.5;
-}
-
-const names=[
-'Gun','Car','House','Robot','Tree',
-'Character','Shield','Ball','Drone','Tower'
-];
-
-const models=document.getElementById('models');
-
-names.forEach(name=>{
-const b=document.createElement('button');
-b.textContent='🔷 '+name;
-b.onclick=()=>{
-makeModel(name);
-document.getElementById('modelName').textContent='3D '+name;
-};
-models.appendChild(b);
-});
-
-makeModel('Gun');
+let selected=null;
+let nextId=1;
+let history=[];
+let wire=false;
 
 function resize(){
 const w=canvas.clientWidth,h=canvas.clientHeight;
@@ -283,49 +170,320 @@ camera.aspect=w/h;
 camera.updateProjectionMatrix();
 renderer.setSize(w,h,false);
 }
-window.addEventListener('resize',resize);
+new ResizeObserver(resize).observe(canvas);
 resize();
 
-canvas.addEventListener('pointerdown',e=>{
-dragging=true;lastX=e.clientX;lastY=e.clientY;
-canvas.setPointerCapture(e.pointerId);
+function mat(color='#38bdf8'){
+return new THREE.MeshStandardMaterial({
+color,metalness:.35,roughness:.4
 });
-canvas.addEventListener('pointerup',()=>dragging=false);
-canvas.addEventListener('pointermove',e=>{
-if(!dragging)return;
-group.rotation.y+=(e.clientX-lastX)*.01;
-group.rotation.x+=(e.clientY-lastY)*.01;
-lastX=e.clientX;lastY=e.clientY;
+}
+
+function mesh(geometry,color){
+return new THREE.Mesh(geometry,mat(color));
+}
+
+function part(parent,geometry,x,y,z,color){
+const m=mesh(geometry,color);
+m.position.set(x,y,z);
+parent.add(m);
+return m;
+}
+
+function createObject(type){
+const g=new THREE.Group();
+const c='#38bdf8';
+const dark='#334155';
+
+if(type==='box')
+part(g,new THREE.BoxGeometry(1,1,1),0,0,0,c);
+
+if(type==='sphere')
+part(g,new THREE.SphereGeometry(.6,32,24),0,0,0,c);
+
+if(type==='cylinder')
+part(g,new THREE.CylinderGeometry(.5,.5,1,32),0,0,0,c);
+
+if(type==='cone')
+part(g,new THREE.ConeGeometry(.6,1.2,32),0,0,0,c);
+
+if(type==='torus')
+part(g,new THREE.TorusGeometry(.5,.15,16,48),0,0,0,c);
+
+if(type==='car'){
+part(g,new THREE.BoxGeometry(2.3,.5,1.1),0,.35,0,c);
+part(g,new THREE.BoxGeometry(1.1,.55,.9),-.1,.85,0,'#7dd3fc');
+for(let x of [-.7,.7]){
+for(let z of [-.6,.6]){
+const w=part(g,new THREE.CylinderGeometry(.27,.27,.18,24),
+x,0,z,dark);
+w.rotation.x=Math.PI/2;
+}}
+}
+
+if(type==='house'){
+part(g,new THREE.BoxGeometry(1.6,1.4,1.6),0,.7,0,c);
+const roof=part(g,new THREE.ConeGeometry(1.25,.9,4),
+0,1.85,0,'#f97316');
+roof.rotation.y=Math.PI/4;
+part(g,new THREE.BoxGeometry(.35,.7,.08),0,.35,.84,dark);
+}
+
+if(type==='robot'){
+part(g,new THREE.BoxGeometry(.9,1.1,.6),0,.7,0,c);
+part(g,new THREE.SphereGeometry(.4,24,20),0,1.55,0,'#94a3b8');
+part(g,new THREE.SphereGeometry(.09,16,16),-.15,1.6,.34,'#22d3ee');
+part(g,new THREE.SphereGeometry(.09,16,16),.15,1.6,.34,'#22d3ee');
+for(let x of [-.65,.65]){
+part(g,new THREE.BoxGeometry(.25,.8,.3),x,.7,0,dark);
+}
+for(let x of [-.23,.23]){
+part(g,new THREE.BoxGeometry(.25,.65,.3),x,-.15,0,dark);
+}
+}
+
+if(type==='tree'){
+part(g,new THREE.CylinderGeometry(.15,.2,1,12),0,.5,0,'#92400e');
+for(let y of [1,1.7,2.3]){
+part(g,new THREE.ConeGeometry(.8,.95,8),0,y,0,'#22c55e');
+}
+}
+
+// Fictional decorative energy blaster prop
+if(type==='blaster'){
+part(g,new THREE.BoxGeometry(1.8,.35,.4),0,.15,0,c);
+part(g,new THREE.BoxGeometry(.45,.65,.35),-.25,-.35,0,dark);
+part(g,new THREE.BoxGeometry(.45,.2,.5),.65,.4,0,'#f59e0b');
+part(g,new THREE.SphereGeometry(.2,20,16),.15,.2,.23,'#22d3ee');
+part(g,new THREE.BoxGeometry(.5,.08,.5),-.1,.4,0,dark);
+}
+
+g.userData.id=nextId++;
+g.userData.type=type;
+g.name=type+' '+g.userData.id;
+return g;
+}
+
+function add(type){
+saveHistory();
+const obj=createObject(type);
+world.add(obj);
+select(obj);
+refreshList();
+}
+
+function select(obj){
+selected=obj;
+transform.detach();
+if(obj)transform.attach(obj);
+refreshList();
+updateInputs();
+}
+
+function refreshList(){
+const s=document.querySelector('#objects');
+s.innerHTML='<option value="">No Object</option>';
+world.children.forEach(o=>{
+const op=document.createElement('option');
+op.value=o.userData.id;
+op.textContent=o.name;
+s.appendChild(op);
 });
+if(selected)s.value=selected.userData.id;
+}
 
-canvas.addEventListener('wheel',e=>{
-camera.position.multiplyScalar(e.deltaY>0?1.1:.9);
-e.preventDefault();
-},{passive:false});
-
-window.resetView=()=>{
-group.rotation.set(0,0,0);
-camera.position.set(5,4,7);
+window.selectById=id=>{
+select(world.children.find(o=>String(o.userData.id)===id)||null);
 };
-window.rotateToggle=()=>autoRotate=!autoRotate;
-window.zoomIn=()=>camera.position.multiplyScalar(.85);
-window.zoomOut=()=>camera.position.multiplyScalar(1.15);
+
+window.setMode=mode=>{
+if(!selected)return alert('पहले Object Select करें');
+transform.setMode(mode);
+};
 
 window.changeColor=value=>{
-currentColor=new THREE.Color(value);
-group.traverse(o=>{
-if(o.isMesh && o.material && o.material.color){
-o.material.color.set(currentColor);
+if(!selected)return;
+selected.traverse(o=>{
+if(o.isMesh){
+o.material.color.set(value);
 }
 });
 };
+
+window.changeScale=value=>{
+if(selected)selected.scale.setScalar(Number(value));
+};
+
+window.changePosition=(axis,value)=>{
+if(selected)selected.position[axis]=Number(value);
+};
+
+window.changeRotation=value=>{
+if(selected)selected.rotation.y=THREE.MathUtils.degToRad(Number(value));
+};
+
+function updateInputs(){
+if(!selected)return;
+document.querySelector('#color').value='#38bdf8';
+document.querySelectorAll('input[type=range]').forEach((el,i)=>{
+if(i===0)el.value=selected.scale.x;
+if(i===1)el.value=selected.position.x;
+if(i===2)el.value=selected.position.y;
+if(i===3)el.value=selected.position.z;
+if(i===4)el.value=THREE.MathUtils.radToDeg(selected.rotation.y);
+});
+}
+
+window.deleteObject=()=>{
+if(!selected)return;
+saveHistory();
+world.remove(selected);
+select(null);
+refreshList();
+};
+
+window.duplicate=()=>{
+if(!selected)return;
+saveHistory();
+const copy=selected.clone(true);
+copy.userData={...selected.userData,id:nextId++};
+copy.name=selected.name+' Copy';
+copy.position.x+=1;
+world.add(copy);
+select(copy);
+};
+
+function saveHistory(){
+history.push(world.children.map(o=>({
+type:o.userData.type,
+id:o.userData.id,
+position:o.position.toArray(),
+rotation:o.rotation.toArray(),
+scale:o.scale.toArray(),
+color:o.children[0]?.material?.color?.getHexString()
+})));
+if(history.length>30)history.shift();
+}
+
+window.undo=()=>{
+const old=history.pop();
+if(!old)return;
+world.clear();
+transform.detach();
+selected=null;
+old.forEach(data=>{
+const o=createObject(data.type);
+o.userData.id=data.id;
+o.position.fromArray(data.position);
+o.rotation.fromArray(data.rotation);
+o.scale.fromArray(data.scale);
+if(data.color)o.traverse(p=>{
+if(p.isMesh)p.material.color.set('#'+data.color);
+});
+world.add(o);
+});
+nextId=Math.max(1,...old.map(x=>x.id))+1;
+refreshList();
+};
+
+window.toggleGrid=()=>grid.visible=!grid.visible;
+window.toggleWire=()=>{
+wire=!wire;
+world.traverse(o=>{
+if(o.isMesh)o.material.wireframe=wire;
+});
+};
+window.resetCamera=()=>{
+camera.position.set(8,7,10);
+orbit.target.set(0,0,0);
+};
+window.resetScene=()=>{
+if(!confirm('सभी Objects हटाएं?'))return;
+world.clear();
+select(null);
+refreshList();
+};
+
+window.saveProject=()=>{
+const data=world.children.map(o=>({
+type:o.userData.type,id:o.userData.id,
+position:o.position.toArray(),
+rotation:o.rotation.toArray(),
+scale:o.scale.toArray(),
+color:o.children[0]?.material?.color?.getHexString()
+}));
+const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+download(blob,'my-3d-project.json');
+};
+
+window.loadProject=()=>document.querySelector('#projectFile').click();
+
+window.readProject=e=>{
+const file=e.target.files[0];
+if(!file)return;
+const reader=new FileReader();
+reader.onload=()=>{
+try{
+const data=JSON.parse(reader.result);
+world.clear();select(null);
+data.forEach(d=>{
+const o=createObject(d.type);
+o.userData.id=d.id;
+o.position.fromArray(d.position);
+o.rotation.fromArray(d.rotation);
+o.scale.fromArray(d.scale);
+if(d.color)o.traverse(p=>{
+if(p.isMesh)p.material.color.set('#'+d.color);
+});
+world.add(o);
+});
+nextId=Math.max(1,...data.map(d=>d.id))+1;
+refreshList();
+}catch(err){alert('Invalid project file');}
+};
+reader.readAsText(file);
+};
+
+function download(blob,name){
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;a.download=name;a.click();
+URL.revokeObjectURL(url);
+}
+
+window.exportGLB=()=>{
+new GLTFExporter().parse(world,result=>{
+const blob=result instanceof ArrayBuffer?
+new Blob([result],{type:'model/gltf-binary'}):
+new Blob([JSON.stringify(result)],{type:'application/json'});
+download(blob,result instanceof ArrayBuffer?'model.glb':'model.gltf');
+},{binary:true});
+};
+
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+
+canvas.addEventListener('pointerdown',e=>{
+if(transform.dragging)return;
+const rect=canvas.getBoundingClientRect();
+pointer.x=((e.clientX-rect.left)/rect.width)*2-1;
+pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;
+raycaster.setFromCamera(pointer,camera);
+const hits=raycaster.intersectObjects(world.children,true);
+if(hits.length){
+let obj=hits[0].object;
+while(obj.parent!==world && obj.parent)obj=obj.parent;
+if(obj.parent===world)select(obj);
+}else if(!transform.dragging)select(null);
+});
 
 function animate(){
 requestAnimationFrame(animate);
-if(autoRotate)group.rotation.y+=.01;
+orbit.update();
 renderer.render(scene,camera);
 }
 animate();
+
 </script>
 </body>
 </html>
